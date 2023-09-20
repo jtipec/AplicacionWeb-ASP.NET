@@ -1,0 +1,319 @@
+Aplicación web ASP.NET (.NET Framework)
+vacío
+API web
+
+
+Paso 1
+Crear la base de datos
+
+create procedure [dbo].[usp_modificar](
+@idusuario int,
+@documentoidentidad varchar(60),
+@nombres varchar(60),
+@telefono varchar(60),
+@correo varchar(60),
+@ciudad varchar(60)
+)
+as
+begin
+
+update USUARIO set 
+DocumentoIdentidad = @documentoidentidad,
+Nombres = @nombres,
+Telefono = @telefono,
+Correo = @correo,
+Ciudad = @ciudad
+where IdUsuario = @idusuario
+
+end
+GO
+
+----------------------------
+
+create procedure [dbo].[usp_obtener](@idusuario int)
+as
+begin
+
+select * from usuario where IdUsuario = @idusuario
+
+end
+GO
+
+
+Paso 2 -
+Crear el modelo Usuario
+
+        public int IdUsuario { get; set; }
+        public string DocumentoIdentidad { get; set; }
+        public string Nombres { get; set; }
+        public string Telefono { get; set; }
+        public string Correo { get; set; }
+        public string Ciudad { get; set; }
+        public DateTime FechaRegistro { get; set; }
+
+
+Paso 3
+Crear carpeta Data
+Creamos clase conexión
+
+
+namespace WebAPI.Data
+{
+    public class Conexion
+    {
+        public static string rutaConexion = "Data Source=.;Initial Catalog=DBPRUEBAS;Integrated Security=True";
+    }
+}
+
+
+Paso 4
+Creamos clase UsuarioData
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+
+using WebAPI.Models;
+using System.Data.SqlClient;
+using System.Data;
+
+
+public static List<Usuario> Listar()
+        {
+            List<Usuario> oListaUsuario = new List<Usuario>();
+            using (SqlConnection oConexion = new SqlConnection(Conexion.rutaConexion))
+            {
+                SqlCommand cmd = new SqlCommand("usp_listar", oConexion);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                try
+                {
+                    oConexion.Open();
+                    cmd.ExecuteNonQuery();
+
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+
+                        while (dr.Read())
+                        {
+                            oListaUsuario.Add(new Usuario()
+                            {
+                                IdUsuario = Convert.ToInt32(dr["IdUsuario"]),
+                                DocumentoIdentidad = dr["DocumentoIdentidad"].ToString(),
+                                Nombres = dr["Nombres"].ToString(),
+                                Telefono = dr["Telefono"].ToString(),
+                                Correo = dr["Correo"].ToString(),
+                                Ciudad = dr["Ciudad"].ToString(),
+                                FechaRegistro = Convert.ToDateTime(dr["FechaRegistro"].ToString())
+                            });
+                        }
+
+                    }
+
+
+
+                    return oListaUsuario;
+                }
+                catch (Exception ex)
+                {
+                    return oListaUsuario;
+                }
+            }
+        }
+
+        public static Usuario Obtener(int idusuario)
+        {
+            Usuario oUsuario = new Usuario();
+            using (SqlConnection oConexion = new SqlConnection(Conexion.rutaConexion))
+            {
+                SqlCommand cmd = new SqlCommand("usp_obtener", oConexion);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@idusuario", idusuario);
+
+                try
+                {
+                    oConexion.Open();
+                    cmd.ExecuteNonQuery();
+
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+
+                        while (dr.Read())
+                        {
+                            oUsuario = new Usuario()
+                            {
+                                IdUsuario = Convert.ToInt32(dr["IdUsuario"]),
+                                DocumentoIdentidad = dr["DocumentoIdentidad"].ToString(),
+                                Nombres = dr["Nombres"].ToString(),
+                                Telefono = dr["Telefono"].ToString(),
+                                Correo = dr["Correo"].ToString(),
+                                Ciudad = dr["Ciudad"].ToString(),
+                                FechaRegistro = Convert.ToDateTime(dr["FechaRegistro"].ToString())
+                            };
+                        }
+
+                    }
+
+
+
+                    return oUsuario;
+                }
+                catch (Exception ex)
+                {
+                    return oUsuario;
+                }
+            }
+        }
+
+
+        public static bool Registrar(Usuario oUsuario)
+        {
+            using (SqlConnection oConexion = new SqlConnection(Conexion.rutaConexion))
+            {
+                SqlCommand cmd = new SqlCommand("usp_registrar", oConexion);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@documentoidentidad", oUsuario.DocumentoIdentidad);
+                cmd.Parameters.AddWithValue("@nombres", oUsuario.Nombres);
+                cmd.Parameters.AddWithValue("@telefono", oUsuario.Telefono);
+                cmd.Parameters.AddWithValue("@correo", oUsuario.Correo);
+                cmd.Parameters.AddWithValue("@ciudad", oUsuario.Ciudad);
+
+                try
+                {
+                    oConexion.Open();
+                    cmd.ExecuteNonQuery();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    return false;
+                }
+            }
+        }
+
+        public static bool Modificar(Usuario oUsuario)
+        {
+            using (SqlConnection oConexion = new SqlConnection(Conexion.rutaConexion))
+            {
+                SqlCommand cmd = new SqlCommand("usp_modificar", oConexion);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@idusuario", oUsuario.IdUsuario);
+                cmd.Parameters.AddWithValue("@documentoidentidad", oUsuario.DocumentoIdentidad);
+                cmd.Parameters.AddWithValue("@nombres", oUsuario.Nombres);
+                cmd.Parameters.AddWithValue("@telefono", oUsuario.Telefono);
+                cmd.Parameters.AddWithValue("@correo", oUsuario.Correo);
+                cmd.Parameters.AddWithValue("@ciudad", oUsuario.Ciudad);
+
+                try
+                {
+                    oConexion.Open();
+                    cmd.ExecuteNonQuery();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    return false;
+                }
+            }
+        }
+
+        
+        public static bool Eliminar(int id)
+        {
+            using (SqlConnection oConexion = new SqlConnection(Conexion.rutaConexion))
+            {
+                SqlCommand cmd = new SqlCommand("usp_eliminar", oConexion);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@idusuario", id);
+
+                try
+                {
+                    oConexion.Open();
+                    cmd.ExecuteNonQuery();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    return false;
+                }
+            }
+        }
+
+
+Paso 5
+Crear controlado Usuario
+Agregar clase - Web - Web API - “Clase de controlador de Web API (v2.1)”
+
+    public class UsuarioController : ApiController
+    {
+        // GET api/<controller>
+        public List<Usuario> Get()
+        {
+            return UsuarioData.Listar();
+        }
+
+        // GET api/<controller>/5
+        public Usuario Get(int id)
+        {
+            return UsuarioData.Obtener(id);
+        }
+
+        // POST api/<controller>
+        public bool Post([FromBody] Usuario oUsuario)
+        {
+            return UsuarioData.Registrar(oUsuario);
+        }
+
+        // PUT api/<controller>/5
+        public bool Put([FromBody] Usuario oUsuario)
+        {
+            return UsuarioData.Modificar(oUsuario);
+        }
+
+        // DELETE api/<controller>/5
+        public bool Delete(int id)
+        {
+            return UsuarioData.Eliminar(id);
+        }
+    }
+
+
+Paso 6
+Para que nuestra pagina pueda usar nuestra pagina
+Instalamos paquetes NuGet “Microsoft.AspNet.WebApi.Cors”
+
+
+Paso 7
+En la carpeta App_Start
+En el archivo “WebApiConfig.cs”
+
+
+namespace WebAPI
+{
+    public static class WebApiConfig
+    {
+        public static void Register(HttpConfiguration config)
+        {
+            // Configuración y servicios de API web
+            var cors = new EnableCorsAttribute("*", "*", "*");
+            config.EnableCors(cors);
+
+            // Rutas de API web
+            config.MapHttpAttributeRoutes();
+
+            config.Routes.MapHttpRoute(
+                name: "DefaultApi",
+                routeTemplate: "api/{controller}/{id}",
+                defaults: new { id = RouteParameter.Optional }
+            );
+        }
+    }
+}
+
+
+Paso 8
+Ahora ejecutamos con postaman
+
+https://localhost:44369/api/usuario
+
